@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<!-- Created with https://packager.turbowarp.org/ -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- We only include this to explicitly loosen the CSP of various packager environments. It does not provide any security. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: blob:">
+  <title>Blabble Chat</title>
+  <style>
+    body {
+      color: #ffffff;
+      font-family: sans-serif;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+    :root, body.is-fullscreen {
+      background-color: #294b38;
+    }
+    [hidden] {
+      display: none !important;
+    }
+    h1 {
+      font-weight: normal;
+    }
+    a {
+      color: inherit;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    #app, #loading, #error, #launch {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      cursor: default;
+      user-select: none;
+      -webkit-user-select: none;
+      background-color: #294b38;
+    }
+    #launch {
+      background-color: rgba(0, 0, 0, 0.7);
+      cursor: pointer;
+    }
+    .green-flag {
+      width: 80px;
+      height: 80px;
+      padding: 16px;
+      border-radius: 100%;
+      background: rgba(255, 255, 255, 0.75);
+      border: 3px solid hsla(0, 100%, 100%, 1);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-sizing: border-box;
+    }
+    #loading {
+      
+    }
+    .progress-bar-outer {
+      border: 1px solid currentColor;
+      height: 10px;
+      width: 200px;
+      max-width: 200px;
+    }
+    .progress-bar-inner {
+      height: 100%;
+      width: 0;
+      background-color: currentColor;
+    }
+    .loading-text, noscript {
+      font-weight: normal;
+      font-size: 36px;
+      margin: 0 0 16px;
+    }
+    .loading-image {
+      margin: 0 0 16px;
+    }
+    #error-message, #error-stack {
+      font-family: monospace;
+      max-width: 600px;
+      white-space: pre-wrap;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    #error-stack {
+      text-align: left;
+      max-height: 200px;
+      overflow: auto;
+    }
+    .control-button {
+      width: 2rem;
+      height: 2rem;
+      padding: 0.375rem;
+      border-radius: 0.25rem;
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: pointer;
+      border: 0;
+      border-radius: 4px;
+    }
+    .control-button:hover {
+      background: #00cc9926;
+    }
+    .control-button.active {
+      background: #00cc9959;
+    }
+    .fullscreen-button {
+      background: white !important;
+    }
+    .standalone-fullscreen-button {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      border-radius: 0 0 0 4px;
+      padding: 4px;
+      cursor: pointer;
+    }
+    .sc-canvas {
+      cursor: auto;
+    }
+    .sc-monitor-root[opcode^="data_"] .sc-monitor-value-color {
+      background-color: #25adda;
+    }
+    .sc-monitor-row-value-outer {
+      background-color: #808080;
+    }
+    .sc-monitor-row-value-editing .sc-monitor-row-value-outer {
+      background-color: #666666;
+    }
+    
+  </style>
+  <meta name="theme-color" content="#294b38">
+  <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHdpZHRoPSIxMzIuODg3NDkiIGhlaWdodD0iNzkuMDYyNTIiIHZpZXdCb3g9IjAsMCwxMzIuODg3NDksNzkuMDYyNTIiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yNTUuNzIzOTksLTE0MC42Mzc0MykiPjxnIGRhdGEtcGFwZXItZGF0YT0ieyZxdW90O2lzUGFpbnRpbmdMYXllciZxdW90Ozp0cnVlfSIgZmlsbC1ydWxlPSJub256ZXJvIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIgc3Ryb2tlLW1pdGVybGltaXQ9IjEwIiBzdHJva2UtZGFzaGFycmF5PSIiIHN0cm9rZS1kYXNob2Zmc2V0PSIwIiBzdHlsZT0ibWl4LWJsZW5kLW1vZGU6IG5vcm1hbCI+PHBhdGggZD0iTTI1OC40Mzg0NCwyMTYuNzg2NzlsMy4wMDMsLTQyLjA0MjA0bDI1LjUyNTUzLC0yOC41Mjg1M2wyOC41Mjg1MywtMy4wMDNsMzEuNTMxNTMsMTkuNTE5NTJsNC41MDQ1LDE4LjAxODAybDMwLjAzMDAzLDE1LjAxNTAxbC0yOC41Mjg1Miw3LjUwNzUxeiIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSI1Ii8+PHBhdGggZD0iTTM1MS45NDIxLDIwMC45NDA3bC0xLjUwMTUsLTE2LjYxODAybC0wLjE4NTkxLC0xLjc0NjlsMjUuOCwxMS44eiIgZmlsbD0iI2JmYmZiZiIgc3Ryb2tlLXdpZHRoPSIwLjUiLz48cGF0aCBkPSJNMzI0LjUwNDUxLDE2NS43MzU3NHYxMi4wMTIwMSIgZmlsbD0ibm9uZSIgc3Ryb2tlLXdpZHRoPSI1Ii8+PHBhdGggZD0iTTI5Ni40NzE0OCwxODIuNzQ3NzV2LTEyLjAxMjAxIiBmaWxsPSJub25lIiBzdHJva2Utd2lkdGg9IjUiLz48L2c+PC9nPjwvc3ZnPjwhLS1yb3RhdGlvbkNlbnRlcjo2NC4yNzYwMTQxODMxNTc4NjozOS4zNjI1NjkzNzEzMTk0NjYtLT4=">
+</head>
+<body>
+  <div id="app"></div>
+
+  <div id="launch" class="screen" hidden title="Click to start">
+    <div class="green-flag">
+      <svg viewBox="0 0 16.63 17.5" width="42" height="44">
+        <defs><style>.cls-1,.cls-2{fill:#4cbf56;stroke:#45993d;stroke-linecap:round;stroke-linejoin:round;}.cls-2{stroke-width:1.5px;}</style></defs>
+        <path class="cls-1" d="M.75,2A6.44,6.44,0,0,1,8.44,2h0a6.44,6.44,0,0,0,7.69,0V12.4a6.44,6.44,0,0,1-7.69,0h0a6.44,6.44,0,0,0-7.69,0"/>
+        <line class="cls-2" x1="0.75" y1="16.75" x2="0.75" y2="0.75"/>
+      </svg>
+    </div>
+  </div>
+
+  <div id="loading" class="screen">
+    <noscript>Enable JavaScript</noscript>
+    
+    <div class="loading-image"><img src="data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHdpZHRoPSIxMzIuODg3NDkiIGhlaWdodD0iNzkuMDYyNTIiIHZpZXdCb3g9IjAsMCwxMzIuODg3NDksNzkuMDYyNTIiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yNTUuNzIzOTksLTE0MC42Mzc0MykiPjxnIGRhdGEtcGFwZXItZGF0YT0ieyZxdW90O2lzUGFpbnRpbmdMYXllciZxdW90Ozp0cnVlfSIgZmlsbC1ydWxlPSJub256ZXJvIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJtaXRlciIgc3Ryb2tlLW1pdGVybGltaXQ9IjEwIiBzdHJva2UtZGFzaGFycmF5PSIiIHN0cm9rZS1kYXNob2Zmc2V0PSIwIiBzdHlsZT0ibWl4LWJsZW5kLW1vZGU6IG5vcm1hbCI+PHBhdGggZD0iTTI1OC40Mzg0NCwyMTYuNzg2NzlsMy4wMDMsLTQyLjA0MjA0bDI1LjUyNTUzLC0yOC41Mjg1M2wyOC41Mjg1MywtMy4wMDNsMzEuNTMxNTMsMTkuNTE5NTJsNC41MDQ1LDE4LjAxODAybDMwLjAzMDAzLDE1LjAxNTAxbC0yOC41Mjg1Miw3LjUwNzUxeiIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSI1Ii8+PHBhdGggZD0iTTM1MS45NDIxLDIwMC45NDA3bC0xLjUwMTUsLTE2LjYxODAybC0wLjE4NTkxLC0xLjc0NjlsMjUuOCwxMS44eiIgZmlsbD0iI2JmYmZiZiIgc3Ryb2tlLXdpZHRoPSIwLjUiLz48cGF0aCBkPSJNMzI0LjUwNDUxLDE2NS43MzU3NHYxMi4wMTIwMSIgZmlsbD0ibm9uZSIgc3Ryb2tlLXdpZHRoPSI1Ii8+PHBhdGggZD0iTTI5Ni40NzE0OCwxODIuNzQ3NzV2LTEyLjAxMjAxIiBmaWxsPSJub25lIiBzdHJva2Utd2lkdGg9IjUiLz48L2c+PC9nPjwvc3ZnPjwhLS1yb3RhdGlvbkNlbnRlcjo2NC4yNzYwMTQxODMxNTc4NjozOS4zNjI1NjkzNzEzMTk0NjYtLT4="></div>
+    
+  </div>
+
+  <div id="error" class="screen" hidden>
+    <h1>Error</h1>
+    <details>
+      <summary id="error-message"></summary>
+      <p id="error-stack"></p>
+    </details>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    const appElement = document.getElementById('app');
+    const launchScreen = document.getElementById('launch');
+    const loadingScreen = document.getElementById('loading');
+    const loadingInner = document.getElementById('loading-inner');
+    const errorScreen = document.getElementById('error');
+    const errorScreenMessage = document.getElementById('error-message');
+    const errorScreenStack = document.getElementById('error-stack');
+
+    const handleError = (error) => {
+      console.error(error);
+      if (!errorScreen.hidden) return;
+      errorScreen.hidden = false;
+      errorScreenMessage.textContent = '' + error;
+      let debug = error && error.stack || 'no stack';
+      debug += '\nUser agent: ' + navigator.userAgent;
+      errorScreenStack.textContent = debug;
+    };
+    const setProgress = (progress) => {
+      if (loadingInner) loadingInner.style.width = progress * 100 + '%';
+    };
+    const interpolate = (a, b, t) => a + t * (b - a);
+
+    try {
+      setProgress(0.1);
+
+      const scaffolding = new Scaffolding.Scaffolding();
+      scaffolding.width = 293;
+      scaffolding.height = 633;
+      scaffolding.resizeMode = "preserve-ratio";
+      scaffolding.editableLists = false;
+      scaffolding.usePackagedRuntime = true;
+      scaffolding.setup();
+      scaffolding.appendTo(appElement);
+
+      const vm = scaffolding.vm;
+      window.scaffolding = scaffolding;
+      window.vm = scaffolding.vm;
+      window.Scratch = {
+        vm,
+        renderer: vm.renderer,
+        audioEngine: vm.runtime.audioEngine,
+        bitmapAdapter: vm.runtime.v2BitmapAdapter,
+        videoProvider: vm.runtime.ioDevices.video.provider
+      };
+
+      scaffolding.setUsername("player####".replace(/#/g, () => Math.floor(Math.random() * 10)));
+      scaffolding.setAccentColor("#00cc99");
+
+      {const providers = {};
+providers.local = new Scaffolding.Cloud.LocalStorageProvider("cloudvariables:8148813");
+providers.ws = new Scaffolding.Cloud.WebSocketProvider("ws://147.185.221.180:21978", "8148813");
+for (const provider of Object.values(providers)) scaffolding.addCloudProvider(provider);
+scaffolding.addCloudProviderOverride("☁ bcUname", providers["local"] || null);
+scaffolding.addCloudProviderOverride("☁ bcPfp", providers["local"] || null);
+scaffolding.addCloudProviderOverride("☁ bcAboutme", providers["local"] || null);
+scaffolding.addCloudProviderOverride("☁ bcFriendid", providers["local"] || null);
+scaffolding.addCloudProviderOverride("☁ friendList", providers["local"] || null);
+scaffolding.addCloudProviderOverride("☁ send2Channel", providers["ws"] || null);
+scaffolding.addCloudProviderOverride("☁ sentFromUser", providers["ws"] || null);
+scaffolding.addCloudProviderOverride("☁ messageSent", providers["ws"] || null);
+scaffolding.addCloudProviderOverride("☁ isSent", providers["ws"] || null);
+};
+
+      vm.setTurboMode(false);
+      if (vm.setInterpolation) vm.setInterpolation(false);
+      if (vm.setFramerate) vm.setFramerate(30);
+      if (vm.renderer.setUseHighQualityRender) vm.renderer.setUseHighQualityRender(false);
+      if (vm.setRuntimeOptions) vm.setRuntimeOptions({
+        fencing: true,
+        miscLimits: false,
+        maxClones: 300,
+      });
+      if (vm.setCompilerOptions) vm.setCompilerOptions({
+        enabled: true,
+        warpTimer: false
+      });
+
+      if (typeof ScaffoldingAddons !== 'undefined') {
+        ScaffoldingAddons.run(scaffolding, {"gamepad":false,"pointerlock":false,"specialCloudBehaviors":false,"unsafeCloudBehaviors":false,"pause":false});
+      }
+
+      scaffolding.setExtensionSecurityManager({
+        getSandboxMode: 'unsandboxed',
+        canLoadExtensionFromProject: (url) => {
+          handleError(new Error('Missing custom extension: ' + url));
+          return Promise.resolve(false);
+        }
+      });
+      for (const extension of ["data:text/javascript;,class%20ScratchAdvancedOperators%20%7B%0A%20%20constructor()%20%7B%7D%0A%20%20%0A%20%20getInfo()%20%7B%0A%20%20%20%20return%20%7B%0A%20%20%20%20%20%20id%3A%20'advancedOperators'%2C%0A%20%20%20%20%20%20name%3A%20'Advanced%20Operators'%2C%0A%20%20%20%20%20%20%0A%20%20%20%20%20%20menuIconURI%3A%20''%2C%0A%20%20%20%20%20%20blockIconURI%3A%20''%2C%0A%20%20%20%20%20%20%0A%20%20%20%20%20%20docsURI%3A%20''%2C%0A%0A%20%20%20%20%20%20blocks%3A%20%5B%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'power'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.REPORTER%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'%5BBASE%5D%20%5E%20%5BEXPONENT%5D'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20BASE%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%202%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20EXPONENT%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%204%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20'---'%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'conditional'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.REPORTER%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'if%20%5BCONDITION%5D%20then%20%5BIF_TRUE%5D%20else%20%5BIF_FALSE%5D'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20CONDITION%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.BOOLEAN%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20IF_TRUE%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'apple'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20IF_FALSE%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'banana'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20'---'%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'greaterThan'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.BOOLEAN%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'(case%20sensitive)%20%5BINPUT_1%5D%20%3E%20%5BINPUT_2%5D'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20INPUT_1%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'0'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20INPUT_2%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'50'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'lessThan'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.BOOLEAN%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'(case%20sensitive)%20%5BINPUT_1%5D%20%3C%20%5BINPUT_2%5D'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20INPUT_1%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'0'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20INPUT_2%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'50'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'equals'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.BOOLEAN%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'(case%20sensitive)%20%5BINPUT_1%5D%20%3D%20%5BINPUT_2%5D'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20INPUT_1%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'0'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20INPUT_2%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'50'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20'---'%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'boolean'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.BOOLEAN%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'Boolean%20%5BINPUT%5D'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20INPUT%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20menu%3A%20'boolean'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'isNumber'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.BOOLEAN%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'%5BINPUT%5D%20is%20number%3F'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20INPUT%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'0'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'characterIsEnglishAlphabet'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.BOOLEAN%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'character%20%5BINPUT%5D%20is%20an%20English%20alphabet%3F'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20INPUT%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'a'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'characterIsUpperCase'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.BOOLEAN%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'character%20%5BINPUT%5D%20is%20uppercase%3F'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20INPUT%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'A'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'characterIsLowerCase'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.BOOLEAN%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'character%20%5BINPUT%5D%20is%20lowercase%3F'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20INPUT%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'a'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20'---'%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'slice'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.REPORTER%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'letters%20%5BINDEX_BEGIN%5D%20to%20%5BINDEX_END%5D%20of%20%5BSTRING%5D'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20STRING%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'apple'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20INDEX_BEGIN%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%202%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20INDEX_END%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%204%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'replace'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.REPORTER%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'replace%20%5BINDEX%5D%20of%20%5BPATTERN%5D%20in%20%5BSTRING%5D%20with%20%5BREPLACEMENT%5D'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20STRING%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'banana%20and%20banana'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20INDEX%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%201%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20PATTERN%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'banana'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20REPLACEMENT%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'apple'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'repeat'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.REPORTER%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'repeat%20%5BSTRING%5D%20%5BCOUNT%5D%20times'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20STRING%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'apple'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20COUNT%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%203%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'reverse'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.REPORTER%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'reverse%20%5BSTRING%5D'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20STRING%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'apple'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'toUpperCase'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.REPORTER%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'%5BSTRING%5D%20to%20upper%20case'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20STRING%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'Apple'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'toLowerCase'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.REPORTER%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'%5BSTRING%5D%20to%20lower%20case'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20STRING%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'Apple'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'capitalize'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.REPORTER%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'capitalize%20%5BSTRING%5D'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20STRING%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'apple'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'count'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.REPORTER%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'count%20%5BPATTERN%5D%20in%20%5BSTRING%5D'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20STRING%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'banana'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20PATTERN%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'a'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'includes'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.BOOLEAN%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'(case%20sensitive)%20%5BSTRING%5D%20contains%20%5BPATTERN%5D%20%3F'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20STRING%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'apple'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20PATTERN%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'a'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20'---'%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'getLine'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.REPORTER%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'line%20%5BLINE_NUMBER%5D%20of%20%5BSTRING%5D'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20STRING%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'apple%5Cnbanana'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20LINE_NUMBER%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%201%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'capitalizeLine'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.REPORTER%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'capitalize%20every%20line%20in%20%5BSTRING%5D'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20STRING%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'apple%5Cnbanana'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'newLine'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.REPORTER%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'new%20line'%2C%0A%20%20%20%20%20%20%20%20%20%20disableMonitor%3A%20true%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20'---'%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20opcode%3A%20'min_max'%2C%0A%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.REPORTER%2C%0A%20%20%20%20%20%20%20%20%20%20text%3A%20'%5BMIN_MAX%5D%20of%20%5BNUMBER_1%5D%20and%20%5BNUMBER_2%5D'%2C%0A%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20MIN_MAX%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20menu%3A%20'min_max'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20NUMBER_1%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'0'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20NUMBER_2%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20'50'%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%5D%2C%0A%20%20%20%20%20%20menus%3A%20%7B%0A%20%20%20%20%20%20%20%20boolean%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20items%3A%20%5B%0A%20%20%20%20%20%20%20%20%20%20%20%20'true'%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20'false'%0A%20%20%20%20%20%20%20%20%20%20%5D%2C%0A%20%20%20%20%20%20%20%20%20%20acceptReporters%3A%20true%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20min_max%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20items%3A%20%5B%0A%20%20%20%20%20%20%20%20%20%20%20%20'minimum'%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20'maximum'%0A%20%20%20%20%20%20%20%20%20%20%5D%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%3B%0A%20%20%7D%0A%0A%20%20power(%7BBASE%2C%20EXPONENT%7D)%20%7B%0A%20%20%20%20return%20Math.pow(BASE%2C%20EXPONENT)%0A%20%20%7D%0A%0A%20%20conditional(%7BCONDITION%2C%20IF_TRUE%2C%20IF_FALSE%7D)%20%7B%0A%20%20%20%20return%20Boolean(CONDITION)%20%3F%20IF_TRUE%20%3A%20IF_FALSE%3B%0A%20%20%7D%0A%20%20%0A%20%20greaterThan(%7BINPUT_1%2C%20INPUT_2%7D)%20%7B%0A%20%20%20%20return%20INPUT_1%20%3E%20INPUT_2%3B%0A%20%20%7D%0A%20%20%0A%20%20lessThan(%7BINPUT_1%2C%20INPUT_2%7D)%20%7B%0A%20%20%20%20return%20INPUT_1%20%3C%20INPUT_2%3B%0A%20%20%7D%0A%20%20%0A%20%20equals(%7BINPUT_1%2C%20INPUT_2%7D)%20%7B%0A%20%20%20%20return%20INPUT_1%20%3D%3D%20INPUT_2%3B%0A%20%20%7D%0A%20%20%0A%20%20boolean(%7BINPUT%7D)%20%7B%0A%20%20%20%20return%20(INPUT%20%3D%3D%20'true'%20%7C%7C%20INPUT%20%3D%3D%20true)%20%3F%20true%20%3A%20false%3B%0A%20%20%7D%0A%20%20%0A%20%20isNumber(%7BINPUT%7D)%20%7B%0A%20%20%20%20return%20!(isNaN(INPUT)%20%7C%7C%20INPUT%20%3D%3D%3D%20'')%3B%0A%20%20%7D%0A%0A%20%20characterIsEnglishAlphabet(%7BINPUT%7D)%20%7B%0A%20%20%20%20INPUT%20%3D%20String(INPUT)%3B%0A%20%20%20%20if(INPUT%20%3D%3D%3D%20'')%20return%20false%3B%0A%20%20%20%20return%20%2F(%5BA-Z%5D%7C%5Ba-z%5D)%2B%2Fg.test(INPUT%5B0%5D)%3B%0A%20%20%7D%0A%0A%20%20characterIsUpperCase(%7BINPUT%7D)%20%7B%0A%20%20%20%20if(this.characterIsEnglishAlphabet(%7BINPUT%3A%20INPUT%7D))%20%7B%0A%20%20%20%20%20%20INPUT%20%3D%20String(INPUT)%3B%0A%20%20%20%20%7D%20else%20%7B%0A%20%20%20%20%20%20return%20false%3B%0A%20%20%20%20%7D%0A%20%20%20%20return%20(INPUT%5B0%5D.toUpperCase()%20%3D%3D%3D%20INPUT%5B0%5D%20%26%26%20INPUT%5B0%5D%20!%3D%3D%20INPUT.toLowerCase())%3B%0A%20%20%7D%0A%0A%20%20characterIsLowerCase(%7BINPUT%7D)%20%7B%0A%20%20%20%20if(this.characterIsEnglishAlphabet(%7BINPUT%3A%20INPUT%7D))%20%7B%0A%20%20%20%20%20%20INPUT%20%3D%20String(INPUT)%3B%0A%20%20%20%20%7D%20else%20%7B%0A%20%20%20%20%20%20return%20false%3B%0A%20%20%20%20%7D%0A%20%20%20%20return%20(INPUT%5B0%5D.toLowerCase()%20%3D%3D%3D%20INPUT%5B0%5D%20%26%26%20INPUT%5B0%5D%20!%3D%3D%20INPUT.toUpperCase())%3B%0A%20%20%7D%0A%0A%20%20slice(%7BSTRING%2C%20INDEX_BEGIN%2C%20INDEX_END%7D)%20%7B%0A%20%20%20%20STRING%20%3D%20String(STRING)%3B%0A%20%20%20%20if(INDEX_BEGIN%20%3D%3D%3D%200%20%7C%7C%20INDEX_BEGIN%20%3D%3D%3D%20'')%20return%20STRING%3B%0A%20%20%20%20return%20INDEX_END%20%3D%3D%3D%20''%20%7C%7C%20(INDEX_END%20%3C%200%20%26%26%20INDEX_END%20%2B%201%20%3D%3D%3D%200)%20%3F%20STRING.slice(INDEX_BEGIN%20%3C%200%20%3F%20INDEX_BEGIN%20%3A%20INDEX_BEGIN%20-%201)%20%3A%20STRING.slice(INDEX_BEGIN%20%3C%200%20%3F%20INDEX_BEGIN%20%3A%20INDEX_BEGIN%20-%201%2C%20INDEX_END%20%3C%200%20%3F%20INDEX_END%20%2B%201%20%3A%20INDEX_END)%3B%0A%20%20%7D%0A%0A%20%20replace(%7BSTRING%2C%20INDEX%2C%20PATTERN%2C%20REPLACEMENT%7D)%20%7B%0A%20%20%20%20STRING%20%3D%20String(STRING)%3B%0A%20%20%20%20if(STRING%20%3D%3D%3D%20''%20%7C%7C%20PATTERN%20%3D%3D%3D%20''%20%7C%7C%20REPLACEMENT%20%3D%3D%3D%20PATTERN)%20return%20STRING%3B%0A%20%20%20%20if(INDEX%20%3D%3D%3D%20'')%20%7B%0A%20%20%20%20%20%20INDEX%20%3D%200%3B%0A%20%20%20%20%7D%20else%20if(!(Number.isInteger(INDEX)))%20%7B%0A%20%20%20%20%20%20INDEX%20%3D%20Math.floor(INDEX)%3B%0A%20%20%20%20%7D%3B%0A%20%20%20%20if(INDEX%20!%3D%200)%20%7B%0A%20%20%20%20%20%20let%20result%20%3D%20STRING.split(PATTERN)%3B%0A%20%20%20%20%20%20if(result.length%20%3D%3D%201%20%7C%7C%20Math.abs(INDEX)%20%3E%3D%20result.length)%20return%20STRING%3B%0A%20%20%20%20%20%20result.splice((INDEX%20%3C%200%20%3F%20result.length%20%2B%20INDEX%20%3A%20INDEX)%20-%201%2C%202%2C%20%60%24%7Bresult%5B(INDEX%20%3C%200%20%3F%20result.length%20%2B%20INDEX%20%3A%20INDEX)%20-%201%5D%7D%24%7BREPLACEMENT%7D%24%7Bresult%5BINDEX%20%3C%200%20%3F%20result.length%20%2B%20INDEX%20%3A%20INDEX%5D%7D%60)%0A%20%20%20%20%20%20return%20result.length%20%3E%201%20%3F%20result.join(PATTERN)%20%3A%20result%5B0%5D%3B%0A%20%20%20%20%7D%20else%20%7B%0A%20%20%20%20%20%20return%20STRING.replaceAll(PATTERN%2C%20REPLACEMENT)%3B%0A%20%20%20%20%7D%0A%20%20%7D%0A%0A%20%20repeat(%7BSTRING%2C%20COUNT%7D)%20%7B%0A%20%20%20%20STRING%20%3D%20String(STRING)%3B%0A%20%20%20%20return%20STRING.repeat(COUNT)%3B%0A%20%20%7D%0A%0A%20%20reverse(%7BSTRING%7D)%20%7B%0A%20%20%20%20STRING%20%3D%20String(STRING)%3B%0A%20%20%20%20return%20STRING.split('').reverse().join('')%3B%0A%20%20%7D%0A%20%20%0A%20%20toUpperCase(%7BSTRING%7D)%20%7B%0A%20%20%20%20STRING%20%3D%20String(STRING)%3B%0A%20%20%20%20return%20STRING.toUpperCase()%3B%0A%20%20%7D%0A%20%20%0A%20%20toLowerCase(%7BSTRING%7D)%20%7B%0A%20%20%20%20STRING%20%3D%20String(STRING)%3B%0A%20%20%20%20return%20STRING.toLowerCase()%3B%0A%20%20%7D%0A%20%20%0A%20%20capitalize(%7BSTRING%7D)%20%7B%0A%20%20%20%20STRING%20%3D%20String(STRING)%3B%0A%20%20%20%20if(STRING%20%3D%3D%3D%20'')%20return%20STRING%3B%0A%20%20%20%20return%20%60%24%7BSTRING%5B0%5D.toUpperCase()%7D%24%7BSTRING.slice(1)%7D%60%3B%0A%20%20%7D%0A%20%20%0A%20%20count(%7BSTRING%2C%20PATTERN%7D)%20%7B%0A%20%20%20%20STRING%20%3D%20String(STRING)%3B%0A%20%20%20%20if(STRING%20%3D%3D%3D%20'')%20return%200%3B%0A%20%20%20%20return%20STRING.split(PATTERN).length%20-%201%3B%0A%20%20%7D%0A%20%20%0A%20%20includes(%7BSTRING%2C%20PATTERN%7D)%20%7B%0A%20%20%20%20STRING%20%3D%20String(STRING)%3B%0A%20%20%20%20return%20STRING.includes(PATTERN)%3B%0A%20%20%7D%0A%20%20%0A%20%20getLine(%7BSTRING%2C%20LINE_NUMBER%7D)%20%7B%0A%20%20%20%20STRING%20%3D%20String(STRING)%3B%0A%20%20%20%20if(STRING%20%3D%3D%3D%20''%20%7C%7C%20LINE_NUMBER%20%3D%3D%3D%20''%20%7C%7C%20LINE_NUMBER%20%3D%3D%200)%20return%20STRING%3B%0A%20%20%20%20let%20result%3B%0A%20%20%20%20if(STRING.includes('%5Cn'))%20%7B%0A%20%20%20%20%20%20result%20%3D%20STRING.split('%5Cn')%3B%0A%20%20%20%20%7D%20else%20%7B%0A%20%20%20%20%20%20result%20%3D%20%5BSTRING%5D%3B%0A%20%20%20%20%7D%0A%20%20%20%20if(Math.abs(LINE_NUMBER)%20%3E%20result.length)%20return%20''%3B%0A%20%20%20%20return%20result%5BLINE_NUMBER%20%3C%200%20%3F%20result.length%20%2B%20LINE_NUMBER%20%3A%20LINE_NUMBER%20-%201%5D%3B%0A%20%20%7D%0A%20%20%0A%20%20capitalizeLine(%7BSTRING%7D)%20%7B%0A%20%20%20%20STRING%20%3D%20String(STRING)%3B%0A%20%20%20%20if(STRING%20%3D%3D%3D%20'')%20return%20STRING%3B%0A%20%20%20%20return%20STRING%0A%20%20%20%20%20%20.split('%5Cn')%0A%20%20%20%20%20%20.map((line)%20%3D%3E%20%7B%0A%20%20%20%20%20%20%20%20if(!(line%20%3D%3D%3D%20''))%20return%20%60%24%7Bline%5B0%5D.toUpperCase()%7D%24%7Bline.slice(1)%7D%60%0A%20%20%20%20%20%20%7D)%0A%20%20%20%20%20%20.join('%5Cn')%3B%0A%20%20%7D%0A%0A%20%20newLine()%20%7B%0A%20%20%20%20return%20'%5Cn'%3B%0A%20%20%7D%0A%20%20%0A%20%20min_max(%7BMIN_MAX%2C%20NUMBER_1%2C%20NUMBER_2%7D)%20%7B%0A%20%20%20%20if(MIN_MAX%20%3D%3D%3D%20'minimum')%20%7B%0A%20%20%20%20%20%20return%20Math.min(NUMBER_1%2C%20NUMBER_2)%3B%0A%20%20%20%20%7D%20else%20if(MIN_MAX%20%3D%3D%3D%20'maximum')%20%7B%0A%20%20%20%20%20%20return%20Math.max(NUMBER_1%2C%20NUMBER_2)%3B%0A%20%20%20%20%7D%0A%20%20%7D%0A%7D%0A%0AScratch.extensions.register(new%20ScratchAdvancedOperators())"]) {
+        vm.extensionManager.loadExtensionURL(extension);
+      }
+
+    } catch (e) {
+      handleError(e);
+    }
+  </script>
+  
+  
+    <script>
+      const getProjectData = (function() {
+        const storage = scaffolding.storage;
+        storage.onprogress = (total, loaded) => {
+          setProgress(interpolate(0.2, 0.98, loaded / total));
+        };
+        
+        storage.addWebStore(
+          [storage.AssetType.ImageVector, storage.AssetType.ImageBitmap, storage.AssetType.Sound],
+          (asset) => new URL('./assets/' + asset.assetId + '.' + asset.dataFormat, location).href
+        );
+        return () => new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.onload = () => {
+          resolve(xhr.response);
+        };
+        xhr.onerror = () => {
+          if (location.protocol === 'file:') {
+            reject(new Error('Zip environment must be used from a website, not from a file URL.'));
+          } else {
+            reject(new Error('Request to load project data failed.'));
+          }
+        };
+        xhr.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setProgress(interpolate(0.1, 0.2, e.loaded / e.total));
+          }
+        };
+        xhr.responseType = 'arraybuffer';
+        xhr.open('GET', "./assets/project.json");
+        xhr.send();
+      });
+      })();
+    </script>
+  <script>
+    const run = async () => {
+      const projectData = await getProjectData();
+      await scaffolding.loadProject(projectData);
+      setProgress(1);
+      loadingScreen.hidden = true;
+      if (true) {
+        scaffolding.start();
+      } else {
+        launchScreen.hidden = false;
+        launchScreen.addEventListener('click', () => {
+          launchScreen.hidden = true;
+          scaffolding.start();
+        });
+        launchScreen.focus();
+      }
+    };
+    run().catch(handleError);
+  </script>
+</body>
+</html>
