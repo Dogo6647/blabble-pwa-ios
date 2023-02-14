@@ -1,2 +1,2 @@
-# blabble-pwa-ios
-Prebuilt Blabble progressive webapp suitable for iOS devices.
+# blabble-pwa-mobile
+Prebuilt Blabble progressive webapp suitable for mobile devices.
